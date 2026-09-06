@@ -10,6 +10,11 @@ import {
   Zap,
 } from "lucide-react";
 
+import WorkspacePreview from "../components/common/WorkspacePreview";
+import FeatureSection from "../components/common/FeatureSection";
+import InfiniteCanvas from "../components/common/InfiniteCanvas";
+import TemplatesSection from "../components/common/TemplatesSection";
+
 const LandingPage = () => {
   const heroRef = useRef(null);
 
@@ -20,7 +25,7 @@ const LandingPage = () => {
   const benefitsRef = useRef(null);
 
   /* =========================================
-     PAGE LOAD ANIMATION
+     HERO LOAD ANIMATION
   ========================================= */
 
   useEffect(() => {
@@ -32,19 +37,17 @@ const LandingPage = () => {
       benefitsRef.current,
     ];
 
-    const timers = [];
-
     elements.forEach((element, index) => {
       if (!element) return;
 
       element.style.opacity = "0";
-      element.style.transform = "translateY(30px)";
+      element.style.transform = "translateY(35px)";
 
       const timer = setTimeout(
         () => {
           element.style.transition = `
-          opacity 0.8s ease,
-          transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)
+          opacity 0.9s ease,
+          transform 0.9s cubic-bezier(0.16, 1, 0.3, 1)
         `;
 
           element.style.opacity = "1";
@@ -53,443 +56,543 @@ const LandingPage = () => {
         150 + index * 140,
       );
 
-      timers.push(timer);
+      return () => clearTimeout(timer);
     });
-
-    return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-    };
   }, []);
 
+  /* =========================================
+     SCROLL TO SECTION
+  ========================================= */
+
+  const scrollToPreview = (event) => {
+    event.preventDefault();
+
+    const element = document.querySelector("#nodexa-preview");
+
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   return (
-    <main
-      ref={heroRef}
-      className="
-        relative
-        min-h-screen
-        overflow-hidden
-        pt-16
-      "
-      style={{
-        backgroundColor: "var(--color-background)",
-        color: "var(--color-text-primary)",
-      }}
-    >
+    <>
       {/* =========================================
-          BACKGROUND GLOWS
+          HERO SECTION
       ========================================= */}
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          overflow-hidden
-        "
-      >
-        {/* PURPLE GLOW */}
-
-        <div
-          className="
-            absolute
-            left-1/2
-            top-[5%]
-            h-[520px]
-            w-[520px]
-            -translate-x-1/2
-            rounded-full
-            blur-[140px]
-          "
-          style={{
-            background: "var(--hero-glow-1)",
-          }}
-        />
-
-        {/* CYAN GLOW */}
-
-        <div
-          className="
-            absolute
-            right-[-180px]
-            top-[180px]
-            h-[460px]
-            w-[460px]
-            rounded-full
-            blur-[140px]
-          "
-          style={{
-            background: "var(--hero-glow-2)",
-          }}
-        />
-
-        {/* BLUE GLOW */}
-
-        <div
-          className="
-            absolute
-            bottom-[60px]
-            left-[-180px]
-            h-[460px]
-            w-[460px]
-            rounded-full
-            blur-[140px]
-          "
-          style={{
-            background: "var(--hero-glow-3)",
-          }}
-        />
-      </div>
-
-      {/* =========================================
-          DOT GRID
-      ========================================= */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-        "
-        style={{
-          backgroundImage: `
-            radial-gradient(
-              circle,
-              var(--color-grid) 1.2px,
-              transparent 1.2px
-            )
-          `,
-
-          backgroundSize: "28px 28px",
-        }}
-      />
-
-      {/* =========================================
-          HERO CONTENT
-      ========================================= */}
-
-      <section
+      <main
+        ref={heroRef}
         className="
           relative
-          z-10
-          mx-auto
-          flex
-          min-h-[calc(100vh-64px)]
-          max-w-7xl
-          flex-col
-          items-center
-          justify-center
-          px-4
-          pb-20
-          pt-10
-          text-center
-          sm:px-6
-          lg:px-8
+          overflow-hidden
+          transition-colors
+          duration-500
         "
+        style={{
+          backgroundColor: "var(--color-background)",
+          color: "var(--color-text-primary)",
+        }}
       >
         {/* =========================================
-            BADGE
+            BACKGROUND GLOWS
         ========================================= */}
 
         <div
-          ref={badgeRef}
           className="
-            mb-7
-            inline-flex
-            items-center
-            gap-2
-            rounded-full
-            border
-            px-4
-            py-2
-            text-[11px]
-            font-bold
-            uppercase
-            tracking-[0.2em]
+            pointer-events-none
+            absolute
+            inset-0
+            overflow-hidden
           "
-          style={{
-            color: "var(--color-accent-cyan)",
-            borderColor: "var(--color-border-strong)",
-            backgroundColor: "var(--color-badge-background)",
-            boxShadow: "0 10px 30px var(--shadow-color)",
-          }}
         >
-          <Sparkles size={15} />
-          AI-Powered Collaborative Workspace
-          <span
+          {/* CENTER PURPLE GLOW */}
+
+          <div
             className="
-              h-1.5
-              w-1.5
+              absolute
+              left-1/2
+              top-[5%]
+              h-[500px]
+              w-[500px]
+              -translate-x-1/2
               rounded-full
+              blur-[140px]
+              sm:h-[650px]
+              sm:w-[650px]
             "
             style={{
-              backgroundColor: "var(--color-accent-cyan)",
+              background: "var(--hero-glow-1)",
+            }}
+          />
+
+          {/* RIGHT CYAN GLOW */}
+
+          <div
+            className="
+              absolute
+              right-[-180px]
+              top-[250px]
+              h-[450px]
+              w-[450px]
+              rounded-full
+              blur-[140px]
+            "
+            style={{
+              background: "var(--hero-glow-2)",
+            }}
+          />
+
+          {/* LEFT BLUE GLOW */}
+
+          <div
+            className="
+              absolute
+              left-[-180px]
+              bottom-[50px]
+              h-[450px]
+              w-[450px]
+              rounded-full
+              blur-[140px]
+            "
+            style={{
+              background: "var(--hero-glow-3)",
             }}
           />
         </div>
 
         {/* =========================================
-            TITLE
-        ========================================= */}
-
-        <h1
-          ref={titleRef}
-          className="
-            max-w-5xl
-            text-5xl
-            font-black
-            leading-[1.05]
-            tracking-tight
-            sm:text-6xl
-            md:text-7xl
-            lg:text-8xl
-          "
-        >
-          <span
-            style={{
-              color: "var(--color-text-primary)",
-            }}
-          >
-            Think It.
-          </span>{" "}
-          <span
-            className="
-              bg-gradient-to-r
-              from-violet-500
-              via-purple-500
-              to-cyan-500
-              bg-clip-text
-              text-transparent
-            "
-          >
-            Connect It.
-          </span>
-          <br />
-          <span
-            className="
-              bg-gradient-to-r
-              from-cyan-500
-              via-blue-500
-              to-violet-500
-              bg-clip-text
-              text-transparent
-            "
-          >
-            Build It Together.
-          </span>
-        </h1>
-
-        {/* =========================================
-            DESCRIPTION
-        ========================================= */}
-
-        <p
-          ref={descriptionRef}
-          className="
-            mt-8
-            max-w-3xl
-            text-base
-            font-medium
-            leading-8
-            sm:text-lg
-          "
-          style={{
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          An AI-powered collaborative visual workspace for brainstorming ideas,
-          designing systems, creating diagrams, and building together in real
-          time.
-        </p>
-
-        {/* =========================================
-            BUTTONS
+            DOT GRID BACKGROUND
         ========================================= */}
 
         <div
-          ref={actionsRef}
           className="
-            mt-9
+            pointer-events-none
+            absolute
+            inset-0
+            opacity-70
+          "
+          style={{
+            backgroundImage: `
+              radial-gradient(
+                circle,
+                var(--color-grid) 1.2px,
+                transparent 1.2px
+              )
+            `,
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        {/* =========================================
+            HERO CONTENT
+        ========================================= */}
+
+        <section
+          className="
+            relative
+            z-10
+            mx-auto
             flex
+            min-h-screen
+            max-w-7xl
             flex-col
             items-center
             justify-center
-            gap-4
-            sm:flex-row
+            px-4
+            pb-24
+            pt-32
+            text-center
+            sm:px-6
+            lg:px-8
           "
         >
-          {/* PRIMARY BUTTON */}
+          {/* =========================================
+              BADGE
+          ========================================= */}
 
-          <Link
-            to="/signup"
+          <div
+            ref={badgeRef}
             className="
-              group
-              flex
-              min-w-[210px]
+              mb-7
+              inline-flex
               items-center
-              justify-center
-              gap-3
-              rounded-2xl
-              bg-gradient-to-r
-              from-violet-600
-              via-purple-500
-              to-blue-500
-              px-7
-              py-4
-              text-sm
+              gap-2
+              rounded-full
+              border
+              px-4
+              py-2
+              text-[10px]
               font-bold
-              text-white
-              shadow-[0_15px_45px_rgba(124,58,237,0.35)]
-              transition-all
-              duration-300
-              hover:-translate-y-1
-              hover:shadow-[0_20px_60px_rgba(124,58,237,0.55)]
+              uppercase
+              tracking-[0.2em]
+              shadow-[0_10px_30px_var(--shadow-color)]
+              sm:text-[11px]
             "
+            style={{
+              color: "#22d3ee",
+              borderColor: "var(--color-border-strong)",
+              backgroundColor: "var(--color-surface)",
+            }}
           >
-            Start Creating Free
-            <ArrowRight
-              size={18}
+            <Sparkles size={15} />
+
+            <span>AI-Powered Collaborative Workspace</span>
+
+            <span
               className="
-                transition-transform
-                duration-300
-                group-hover:translate-x-1
+                h-1.5
+                w-1.5
+                rounded-full
+                bg-cyan-400
+                shadow-[0_0_12px_rgba(34,211,238,0.9)]
               "
             />
-          </Link>
+          </div>
 
-          {/* SECONDARY BUTTON */}
+          {/* =========================================
+              HERO TITLE
+          ========================================= */}
 
-          <a
-            href="#nodexa-preview"
+          <h1
+            ref={titleRef}
             className="
-              group
-              flex
-              min-w-[190px]
-              items-center
-              justify-center
-              gap-3
-              rounded-2xl
-              border
-              px-7
-              py-4
-              text-sm
-              font-bold
-              transition-all
-              duration-300
-              hover:-translate-y-1
+              max-w-6xl
+              text-5xl
+              font-black
+              leading-[1.05]
+              tracking-tight
+              sm:text-6xl
+              md:text-7xl
+              lg:text-8xl
+            "
+          >
+            {/* THINK IT */}
+            <span
+              style={{
+                color: "var(--color-text-primary)",
+              }}
+            >
+              Think It.
+            </span>{" "}
+            {/* CONNECT IT */}
+            <span
+              className="
+                bg-gradient-to-r
+                from-violet-500
+                via-purple-500
+                to-cyan-400
+                bg-clip-text
+                text-transparent
+              "
+            >
+              Connect It.
+            </span>
+            <br />
+            {/* BUILD IT */}
+            <span
+              className="
+                bg-gradient-to-r
+                from-cyan-400
+                via-blue-400
+                to-violet-500
+                bg-clip-text
+                text-transparent
+              "
+            >
+              Build It Together.
+            </span>
+          </h1>
+
+          {/* =========================================
+              DESCRIPTION
+          ========================================= */}
+
+          <p
+            ref={descriptionRef}
+            className="
+              mt-8
+              max-w-3xl
+              text-base
+              leading-8
+              sm:text-lg
+              sm:leading-8
             "
             style={{
-              color: "var(--color-text-primary)",
-              backgroundColor: "var(--button-secondary-bg)",
-              borderColor: "var(--color-border-strong)",
-              boxShadow: "0 10px 30px var(--shadow-color)",
-            }}
-            onMouseEnter={(event) => {
-              event.currentTarget.style.backgroundColor =
-                "var(--button-secondary-hover)";
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.backgroundColor =
-                "var(--button-secondary-bg)";
+              color: "var(--color-text-secondary)",
             }}
           >
-            <PlayCircle
-              size={18}
+            An AI-powered collaborative visual workspace for brainstorming
+            ideas, designing systems, creating diagrams, and building together
+            in real time.
+          </p>
+
+          {/* =========================================
+              HERO BUTTONS
+          ========================================= */}
+
+          <div
+            ref={actionsRef}
+            className="
+              mt-9
+              flex
+              flex-col
+              items-center
+              justify-center
+              gap-4
+              sm:flex-row
+            "
+          >
+            {/* PRIMARY BUTTON */}
+
+            <Link
+              to="/signup"
+              className="
+                group
+                flex
+                min-w-[220px]
+                items-center
+                justify-center
+                gap-3
+                rounded-2xl
+                bg-gradient-to-r
+                from-violet-600
+                via-purple-500
+                to-blue-500
+                px-7
+                py-4
+                text-sm
+                font-bold
+                text-white
+                shadow-[0_15px_45px_rgba(124,58,237,0.35)]
+                transition-all
+                duration-300
+                hover:-translate-y-1
+                hover:shadow-[0_20px_60px_rgba(124,58,237,0.55)]
+              "
+            >
+              Start Creating Free
+              <ArrowRight
+                size={18}
+                className="
+                  transition-transform
+                  duration-300
+                  group-hover:translate-x-1
+                "
+              />
+            </Link>
+
+            {/* SECONDARY BUTTON */}
+
+            <a
+              href="#nodexa-preview"
+              onClick={scrollToPreview}
+              className="
+                group
+                flex
+                min-w-[200px]
+                items-center
+                justify-center
+                gap-3
+                rounded-2xl
+                border
+                px-7
+                py-4
+                text-sm
+                font-bold
+                shadow-lg
+                transition-all
+                duration-300
+                hover:-translate-y-1
+              "
               style={{
-                color: "var(--color-accent-cyan)",
+                color: "var(--color-text-primary)",
+                backgroundColor: "var(--button-secondary-bg)",
+                borderColor: "var(--color-border-strong)",
               }}
-            />
-            Explore Nodexa
-          </a>
-        </div>
-
-        {/* =========================================
-            BENEFITS
-        ========================================= */}
-
-        <div
-          ref={benefitsRef}
-          className="
-            mt-10
-            flex
-            flex-wrap
-            items-center
-            justify-center
-            gap-x-6
-            gap-y-4
-            text-sm
-            font-medium
-            sm:gap-x-10
-          "
-          style={{
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          {/* BENEFIT 1 */}
-
-          <div className="flex items-center gap-2">
-            <WandSparkles
-              size={16}
-              style={{
-                color: "var(--color-accent-cyan)",
+              onMouseEnter={(event) => {
+                event.currentTarget.style.backgroundColor =
+                  "var(--button-secondary-hover)";
               }}
-            />
-            Free forever for individuals
+              onMouseLeave={(event) => {
+                event.currentTarget.style.backgroundColor =
+                  "var(--button-secondary-bg)";
+              }}
+            >
+              <PlayCircle
+                size={19}
+                className="
+                  text-cyan-400
+                  transition-transform
+                  duration-300
+                  group-hover:scale-110
+                "
+              />
+              Explore Nodexa
+            </a>
           </div>
 
-          {/* DIVIDER */}
+          {/* =========================================
+              BENEFITS
+          ========================================= */}
+
+          <div
+            ref={benefitsRef}
+            className="
+              mt-10
+              flex
+              flex-wrap
+              items-center
+              justify-center
+              gap-x-6
+              gap-y-4
+              text-sm
+              sm:gap-x-10
+            "
+            style={{
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            {/* BENEFIT 1 */}
+
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <WandSparkles size={16} className="text-cyan-400" />
+
+              <span>Free forever for individuals</span>
+            </div>
+
+            {/* DIVIDER */}
+
+            <div
+              className="
+                hidden
+                h-4
+                w-px
+                sm:block
+              "
+              style={{
+                backgroundColor: "var(--color-border-strong)",
+              }}
+            />
+
+            {/* BENEFIT 2 */}
+
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <CreditCard size={16} className="text-cyan-400" />
+
+              <span>No credit card required</span>
+            </div>
+
+            {/* DIVIDER */}
+
+            <div
+              className="
+                hidden
+                h-4
+                w-px
+                sm:block
+              "
+              style={{
+                backgroundColor: "var(--color-border-strong)",
+              }}
+            />
+
+            {/* BENEFIT 3 */}
+
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <Zap size={16} className="text-cyan-400" />
+
+              <span>Real-time collaboration</span>
+            </div>
+          </div>
+
+          {/* =========================================
+              SCROLL INDICATOR
+          ========================================= */}
 
           <div
             className="
+              absolute
+              bottom-8
+              left-1/2
               hidden
-              h-4
-              w-px
-              sm:block
+              -translate-x-1/2
+              flex-col
+              items-center
+              gap-2
+              md:flex
             "
-            style={{
-              backgroundColor: "var(--color-border-strong)",
-            }}
-          />
-
-          {/* BENEFIT 2 */}
-
-          <div className="flex items-center gap-2">
-            <CreditCard
-              size={16}
+          >
+            <span
+              className="
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-[0.2em]
+              "
               style={{
-                color: "var(--color-accent-cyan)",
+                color: "var(--color-text-muted)",
               }}
-            />
-            No credit card required
-          </div>
+            >
+              Discover More
+            </span>
 
-          {/* DIVIDER */}
-
-          <div
-            className="
-              hidden
-              h-4
-              w-px
-              sm:block
-            "
-            style={{
-              backgroundColor: "var(--color-border-strong)",
-            }}
-          />
-
-          {/* BENEFIT 3 */}
-
-          <div className="flex items-center gap-2">
-            <Zap
-              size={16}
+            <div
+              className="
+                flex
+                h-9
+                w-5
+                justify-center
+                rounded-full
+                border
+                p-1
+              "
               style={{
-                color: "var(--color-accent-cyan)",
+                borderColor: "var(--color-border)",
               }}
-            />
-            Real-time collaboration
+            >
+              <div
+                className="
+                  h-2
+                  w-1
+                  animate-bounce
+                  rounded-full
+                  bg-cyan-400
+                "
+              />
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+
+      <WorkspacePreview />
+
+      <FeatureSection />
+
+      <InfiniteCanvas />
+
+      <TemplatesSection />
+    </>
   );
 };
 

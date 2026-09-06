@@ -149,3 +149,217 @@ body *::after {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =========================================
+   LANDING PAGE REVEAL ANIMATION
+========================================= */
+
+.reveal-item {
+  opacity: 0;
+  transform: translateY(35px) scale(0.98);
+
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-item.animate-show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-item {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* =========================================
+   INFINITE CANVAS SECTION ANIMATIONS
+========================================= */
+
+.canvas-content {
+  opacity: 0;
+  transform: translateY(50px);
+  transition:
+    opacity 0.9s ease,
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.canvas-section-visible .canvas-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================
+   CANVAS VISUAL
+========================================= */
+
+.canvas-visual {
+  opacity: 0;
+  transform: translateX(60px) scale(0.97);
+  transition:
+    opacity 1s ease 0.2s,
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+
+.canvas-section-visible .canvas-visual {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* =========================================
+   LEFT CONTENT
+========================================= */
+
+.canvas-left-content {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition:
+    opacity 0.9s ease,
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.canvas-section-visible .canvas-left-content {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* =========================================
+   FEATURE CARDS
+========================================= */
+
+.canvas-feature-card {
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    border-color 0.35s ease !important;
+}
+
+.canvas-feature-card:hover {
+  box-shadow: 0 20px 50px rgba(124, 58, 237, 0.12);
+}
+
+/* =========================================
+   NODES
+========================================= */
+
+.canvas-node {
+  animation: canvasNodeFloat 6s ease-in-out infinite;
+}
+
+.canvas-node:nth-of-type(2) {
+  animation-delay: 0.8s;
+}
+
+.canvas-node:nth-of-type(3) {
+  animation-delay: 1.6s;
+}
+
+.canvas-node:nth-of-type(4) {
+  animation-delay: 2.4s;
+}
+
+@keyframes canvasNodeFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* =========================================
+   AI STATUS
+========================================= */
+
+.canvas-floating-status {
+  animation: floatingStatus 4s ease-in-out infinite;
+}
+
+@keyframes floatingStatus {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* =========================================
+   BOTTOM CTA
+========================================= */
+
+.canvas-bottom-cta {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.8s ease 0.3s,
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+}
+
+.canvas-section-visible .canvas-bottom-cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================
+   REDUCE MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-content,
+  .canvas-visual,
+  .canvas-left-content,
+  .canvas-bottom-cta {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .canvas-node,
+  .canvas-floating-status {
+    animation: none !important;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 640px) {
+  .canvas-node {
+    transform: scale(0.82);
+    transform-origin: center;
+  }
+
+  .canvas-floating-status {
+    transform: scale(0.85);
+    transform-origin: left bottom;
+  }
+}

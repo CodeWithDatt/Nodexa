@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 
 import {
+  Box,
   Hand,
   Layers3,
   Minus,
@@ -111,6 +112,13 @@ const nodeWidth = 190;
 const nodeHeight = 105;
 
 /* =========================================
+   CANVAS CONFIGURATION
+========================================= */
+
+const canvasWorldWidth = 1250;
+const canvasWorldHeight = 700;
+
+/* =========================================
    MAIN COMPONENT
 ========================================= */
 
@@ -130,12 +138,10 @@ const WorkspacePreview = () => {
   const [activeTool, setActiveTool] = useState("select");
 
   /*
-    90% DEFAULT ZOOM
+    Default zoom is now 90%.
 
-    Zoom changes by exactly 10%.
-
-    90 → 100 → 110
-    90 → 80 → 70
+    Zoom changes in steps of 10:
+    80 → 90 → 100 → 110...
   */
 
   const [zoom, setZoom] = useState(0.9);
@@ -160,6 +166,15 @@ const WorkspacePreview = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const [shared, setShared] = useState(false);
+
+  /*
+    Tracks how many components have been added.
+
+    This helps us position each new component
+    differently instead of stacking them.
+  */
+
+  const [componentCount, setComponentCount] = useState(0);
 
   /* =========================================
      CREATE NODE MAP
@@ -271,7 +286,7 @@ const WorkspacePreview = () => {
   /* =========================================
      ZOOM IN
 
-     +10%
+     90 → 100 → 110...
   ========================================= */
 
   const zoomIn = () => {
@@ -281,7 +296,7 @@ const WorkspacePreview = () => {
   /* =========================================
      ZOOM OUT
 
-     -10%
+     90 → 80 → 70...
   ========================================= */
 
   const zoomOut = () => {
@@ -306,85 +321,95 @@ const WorkspacePreview = () => {
 
     setSelectedNode("gateway");
 
-    setActiveTool("select");
+    setComponentCount(0);
+  };
+
+  /* =========================================
+     FIND SAFE POSITION FOR NEW COMPONENT
+  ========================================= */
+
+  const getNewComponentPosition = (selected, currentCount) => {
+    /*
+      If there is no selected node,
+      add the component in the middle area.
+    */
+
+    if (!selected) {
+      return {
+        x: 300 + currentCount * 30,
+        y: 350 + currentCount * 25,
+      };
+    }
+
+    /*
+      Different offsets.
+
+      Every new component moves through
+      these positions around the selected node.
+
+      This prevents components from
+      appearing on top of each other.
+    */
+
+    const positions = [
+      {
+        x: nodeWidth + 80,
+        y: 0,
+      },
+
+      {
+        x: nodeWidth + 70,
+        y: 140,
+      },
+
+      {
+        x: nodeWidth + 60,
+        y: -140,
+      },
+
+      {
+        x: 0,
+        y: nodeHeight + 100,
+      },
+
+      {
+        x: -nodeWidth - 80,
+        y: 130,
+      },
+    ];
+
+    const offset = positions[currentCount % positions.length];
+
+    /*
+      Every full cycle moves slightly farther away.
+    */
+
+    const cycle = Math.floor(currentCount / positions.length) * 45;
+
+    return {
+      x: Math.max(20, selected.x + offset.x + cycle),
+
+      y: Math.max(20, selected.y + offset.y + cycle),
+    };
   };
 
   /* =========================================
      ADD COMPONENT
 
-     IMPORTANT LOGIC:
+     IMPORTANT:
 
-     1. Uses currently selected node
-        as parent.
-
-     2. If nothing is selected,
-        API Gateway becomes parent.
-
-     3. New component is automatically
-        connected to parent.
-
-     4. Components appear in different
-        positions.
-
-     5. New component becomes selected.
+     - Detect selected node.
+     - Add new component near it.
+     - Connect selected → new component.
+     - Select new component.
   ========================================= */
 
   const addComponent = () => {
-    /*
-      Get selected parent.
+    const parentNode = selectedNode ? nodeMap[selectedNode] : null;
 
-      If there is no selected node,
-      use API Gateway.
-    */
+    const position = getNewComponentPosition(parentNode, componentCount);
 
-    const parentId = selectedNode || "gateway";
-
-    /*
-      Find selected parent node.
-    */
-
-    const parentNode = nodes.find((node) => node.id === parentId);
-
-    if (!parentNode) {
-      return;
-    }
-
-    /*
-      Count existing components
-      connected from this parent.
-
-      This helps position each
-      new component differently.
-    */
-
-    const existingChildren = connections.filter(
-      ([fromId]) => fromId === parentId,
-    ).length;
-
-    /*
-      Create unique ID.
-    */
-
-    const id = `service-${Date.now()}`;
-
-    /*
-      Different vertical positions.
-
-      Components won't stack
-      on exactly the same place.
-    */
-
-    const verticalOffsets = [0, -145, 145, -290, 290];
-
-    const verticalOffset =
-      verticalOffsets[existingChildren % verticalOffsets.length];
-
-    /*
-      Create new node.
-
-      New node appears to the
-      right of the selected node.
-    */
+    const id = `component-${Date.now()}`;
 
     const newNode = {
       id,
@@ -393,41 +418,55 @@ const WorkspacePreview = () => {
 
       label: "NEW_COMPONENT",
 
-      description: "Connected component",
+      description: "Connected to your architecture",
 
-      x: parentNode.x + 245,
+      x: Math.min(position.x, canvasWorldWidth - nodeWidth - 20),
 
-      y: parentNode.y + verticalOffset,
+      y: Math.min(position.y, canvasWorldHeight - nodeHeight - 20),
 
       accent: "#8b5cf6",
     };
 
     /*
-      Add node.
+      Add the node.
     */
 
     setNodes((currentNodes) => [...currentNodes, newNode]);
 
     /*
-      Create connection.
-
-      Parent
-        ↓
-      New Component
+      Automatically create connection
+      from selected node to new node.
     */
 
-    setConnections((currentConnections) => [
-      ...currentConnections,
-
-      [parentId, id],
-    ]);
+    if (parentNode) {
+      setConnections((currentConnections) => [
+        ...currentConnections,
+        [parentNode.id, id],
+      ]);
+    }
 
     /*
-      Automatically select
-      newly created node.
+      Select new component.
     */
 
     setSelectedNode(id);
+
+    /*
+      Increment count so the next component
+      gets a different position.
+    */
+
+    setComponentCount((currentCount) => currentCount + 1);
+
+    /*
+      Show helpful AI status.
+    */
+
+    setAiStatus(
+      parentNode
+        ? `New component connected to ${parentNode.title}.`
+        : "New component added to the workspace.",
+    );
   };
 
   /* =========================================
@@ -485,25 +524,106 @@ const WorkspacePreview = () => {
         sm:px-6
         lg:px-8
       "
+      style={{
+        backgroundColor: "var(--color-background)",
+      }}
     >
+      {/* =========================================
+          SECTION HEADING
+      ========================================= */}
+
+      <div className="mx-auto mb-10 max-w-3xl text-center">
+        <div
+          className="
+            mb-4
+            inline-flex
+            items-center
+            gap-2
+            rounded-full
+            border
+            px-4
+            py-2
+            text-xs
+            font-semibold
+          "
+          style={{
+            color: "#22d3ee",
+
+            borderColor: "var(--color-border-strong)",
+
+            backgroundColor: "var(--color-surface)",
+          }}
+        >
+          <Sparkles size={14} />
+          INTERACTIVE WORKSPACE
+        </div>
+
+        <h2
+          className="
+            text-3xl
+            font-black
+            tracking-tight
+            sm:text-4xl
+            lg:text-5xl
+          "
+          style={{
+            color: "var(--color-text-primary)",
+          }}
+        >
+          Turn Ideas Into{" "}
+          <span
+            className="
+              bg-gradient-to-r
+              from-violet-500
+              via-purple-500
+              to-cyan-400
+              bg-clip-text
+              text-transparent
+            "
+          >
+            Connected Systems.
+          </span>
+        </h2>
+
+        <p
+          className="
+            mx-auto
+            mt-4
+            max-w-2xl
+            text-sm
+            leading-7
+            sm:text-base
+          "
+          style={{
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          Drag components, connect your architecture, collaborate with your
+          team, and let Nodexa AI help transform ideas into structured systems.
+        </p>
+      </div>
+
       <div className="mx-auto max-w-7xl">
-        {/* =====================================
+        {/* =========================================
             MAIN WORKSPACE CONTAINER
-        ===================================== */}
+        ========================================= */}
 
         <div
           className="
             overflow-hidden
             rounded-[28px]
             border
-            border-[#2e334d]/70
-            bg-[#0b0e18]
-            shadow-[0_30px_90px_rgba(0,0,0,0.65)]
+            shadow-[0_30px_90px_rgba(0,0,0,0.28)]
           "
+          style={{
+            backgroundColor: "var(--color-surface-elevated)",
+
+            borderColor: "var(--color-border)",
+          }}
         >
-          {/* =====================================
+          {/* =========================================
               TOP TOOLBAR
-          ===================================== */}
+          ========================================= */}
 
           <div
             className="
@@ -513,15 +633,16 @@ const WorkspacePreview = () => {
               justify-between
               gap-3
               border-b
-              border-[#2e334d]/60
-              bg-[#191b26]/95
               px-3
               sm:px-5
             "
+            style={{
+              backgroundColor: "var(--color-surface)",
+
+              borderColor: "var(--color-border)",
+            }}
           >
-            {/* =====================================
-                LEFT TOOLS
-            ===================================== */}
+            {/* LEFT TOOLS */}
 
             <div
               className="
@@ -530,7 +651,7 @@ const WorkspacePreview = () => {
                 gap-1.5
               "
             >
-              {/* SELECT TOOL */}
+              {/* SELECT */}
 
               <button
                 onClick={() => setActiveTool("select")}
@@ -543,18 +664,14 @@ const WorkspacePreview = () => {
                   ${
                     activeTool === "select"
                       ? "bg-violet-600 text-white"
-                      : `
-                        text-slate-400
-                        hover:bg-[#232635]
-                        hover:text-white
-                      `
+                      : "text-slate-400 hover:bg-black/5 hover:text-violet-500 dark:hover:bg-white/10"
                   }
                 `}
               >
                 <MousePointer2 size={17} />
               </button>
 
-              {/* HAND TOOL */}
+              {/* HAND */}
 
               <button
                 onClick={() => setActiveTool("hand")}
@@ -567,11 +684,7 @@ const WorkspacePreview = () => {
                   ${
                     activeTool === "hand"
                       ? "bg-violet-600 text-white"
-                      : `
-                        text-slate-400
-                        hover:bg-[#232635]
-                        hover:text-white
-                      `
+                      : "text-slate-400 hover:bg-black/5 hover:text-violet-500 dark:hover:bg-white/10"
                   }
                 `}
               >
@@ -583,41 +696,40 @@ const WorkspacePreview = () => {
                   mx-1
                   h-5
                   w-px
-                  bg-[#2e334d]
                 "
+                style={{
+                  backgroundColor: "var(--color-border)",
+                }}
               />
 
-              {/* =====================================
-                  ADD COMPONENT
+              {/* ADD COMPONENT
 
-                  ONLY ONE COMPONENT BUTTON
-              ===================================== */}
+                  Only ONE add-component button.
+              */}
 
               <button
                 onClick={addComponent}
-                title={
-                  selectedNode
-                    ? "Add component to selected node"
-                    : "Add component to API Gateway"
-                }
+                title="Add component"
                 className="
                   flex
                   items-center
                   gap-2
                   rounded-xl
                   border
-                  border-cyan-500/30
-                  bg-[#232635]
                   px-3
                   py-1.5
                   text-xs
-                  font-medium
-                  text-cyan-300
+                  font-semibold
                   transition
-                  hover:border-cyan-400/50
-                  hover:bg-[#2a2d3e]
-                  hover:text-cyan-200
+                  hover:scale-[1.02]
                 "
+                style={{
+                  color: "#22d3ee",
+
+                  backgroundColor: "rgba(6,182,212,0.08)",
+
+                  borderColor: "rgba(6,182,212,0.25)",
+                }}
               >
                 <Plus size={15} />
 
@@ -625,9 +737,7 @@ const WorkspacePreview = () => {
               </button>
             </div>
 
-            {/* =====================================
-                CENTER FILE NAME
-            ===================================== */}
+            {/* CENTER FILE NAME */}
 
             <div
               className="
@@ -638,21 +748,13 @@ const WorkspacePreview = () => {
                 md:flex
               "
             >
-              <span
-                className="
-                  h-2.5
-                  w-2.5
-                  rounded-full
-                  bg-emerald-400
-                  shadow-[0_0_10px_rgba(52,211,153,0.8)]
-                "
-              />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
 
               <span
-                className="
-                  font-medium
-                  text-white
-                "
+                className="font-semibold"
+                style={{
+                  color: "var(--color-text-primary)",
+                }}
               >
                 nodexa-system-design.ndx
               </span>
@@ -666,16 +768,14 @@ const WorkspacePreview = () => {
                   px-2
                   py-0.5
                   text-[10px]
-                  text-violet-300
+                  text-violet-500
                 "
               >
                 live
               </span>
             </div>
 
-            {/* =====================================
-                RIGHT CONTROLS
-            ===================================== */}
+            {/* RIGHT CONTROLS */}
 
             <div
               className="
@@ -692,21 +792,25 @@ const WorkspacePreview = () => {
                   items-center
                   rounded-xl
                   border
-                  border-[#2e334d]
-                  bg-[#232635]
                   px-1
                   sm:flex
                 "
+                style={{
+                  backgroundColor: "var(--color-surface-hover)",
+
+                  borderColor: "var(--color-border)",
+                }}
               >
                 <button
                   onClick={zoomOut}
-                  title="Zoom out"
                   className="
                     p-1.5
-                    text-slate-400
                     transition
-                    hover:text-white
+                    hover:text-violet-500
                   "
+                  style={{
+                    color: "var(--color-text-secondary)",
+                  }}
                 >
                   <Minus size={14} />
                 </button>
@@ -717,21 +821,24 @@ const WorkspacePreview = () => {
                     text-center
                     text-xs
                     font-semibold
-                    text-white
                   "
+                  style={{
+                    color: "var(--color-text-primary)",
+                  }}
                 >
                   {Math.round(zoom * 100)}%
                 </span>
 
                 <button
                   onClick={zoomIn}
-                  title="Zoom in"
                   className="
                     p-1.5
-                    text-slate-400
                     transition
-                    hover:text-white
+                    hover:text-violet-500
                   "
+                  style={{
+                    color: "var(--color-text-secondary)",
+                  }}
                 >
                   <Plus size={14} />
                 </button>
@@ -745,13 +852,17 @@ const WorkspacePreview = () => {
                 className="
                   rounded-xl
                   border
-                  border-[#2e334d]
-                  bg-[#232635]
                   p-2
-                  text-slate-400
                   transition
-                  hover:text-white
+                  hover:text-violet-500
                 "
+                style={{
+                  backgroundColor: "var(--color-surface-hover)",
+
+                  borderColor: "var(--color-border)",
+
+                  color: "var(--color-text-secondary)",
+                }}
               >
                 <RotateCcw size={16} />
               </button>
@@ -818,9 +929,9 @@ const WorkspacePreview = () => {
             </div>
           </div>
 
-          {/* =====================================
+          {/* =========================================
               CANVAS
-          ===================================== */}
+          ========================================= */}
 
           <div
             ref={canvasRef}
@@ -830,30 +941,33 @@ const WorkspacePreview = () => {
             onPointerLeave={handlePointerUp}
             className={`
               relative
-              h-[590px]
+              h-[540px]
               overflow-hidden
-              bg-[#0b0e18]
-              sm:h-[650px]
+              sm:h-[610px]
 
               ${
                 activeTool === "hand"
-                  ? `
-                    cursor-grab
-                    active:cursor-grabbing
-                  `
+                  ? "cursor-grab active:cursor-grabbing"
                   : "cursor-default"
               }
             `}
             style={{
-              backgroundImage:
-                "radial-gradient(circle, rgba(167,139,250,0.18) 1.15px, transparent 1.15px)",
+              backgroundColor: "var(--color-background-secondary)",
+
+              backgroundImage: `
+                radial-gradient(
+                  circle,
+                  var(--color-grid) 1px,
+                  transparent 1px
+                )
+              `,
 
               backgroundSize: "28px 28px",
             }}
           >
-            {/* =====================================
+            {/* =========================================
                 CANVAS WORLD
-            ===================================== */}
+            ========================================= */}
 
             <div
               className="
@@ -874,9 +988,7 @@ const WorkspacePreview = () => {
                 `,
               }}
             >
-              {/* =====================================
-                  CONNECTIONS
-              ===================================== */}
+              {/* CONNECTIONS */}
 
               <svg
                 className="
@@ -928,9 +1040,7 @@ const WorkspacePreview = () => {
 
                           C
                           ${middleX} ${startY},
-
                           ${middleX} ${endY},
-
                           ${endX} ${endY}
                         `}
                       fill="none"
@@ -942,9 +1052,7 @@ const WorkspacePreview = () => {
                 })}
               </svg>
 
-              {/* =====================================
-                  ARCHITECTURE NODES
-              ===================================== */}
+              {/* ARCHITECTURE NODES */}
 
               {nodes.map((node) => (
                 <ArchitectureNode
@@ -955,10 +1063,7 @@ const WorkspacePreview = () => {
                 />
               ))}
 
-              {/* =====================================
-                  COLLAB CURSOR
-                  SARAH
-              ===================================== */}
+              {/* SARAH CURSOR */}
 
               <div
                 className="
@@ -998,10 +1103,7 @@ const WorkspacePreview = () => {
                 </span>
               </div>
 
-              {/* =====================================
-                  COLLAB CURSOR
-                  ALEX
-              ===================================== */}
+              {/* ALEX CURSOR */}
 
               <div
                 className="
@@ -1041,9 +1143,7 @@ const WorkspacePreview = () => {
                 </span>
               </div>
 
-              {/* =====================================
-                  JOHN STATUS
-              ===================================== */}
+              {/* JOHN STATUS */}
 
               <div
                 className="
@@ -1072,9 +1172,9 @@ const WorkspacePreview = () => {
               </div>
             </div>
 
-            {/* =====================================
-                NODExA AI PANEL
-            ===================================== */}
+            {/* =========================================
+                NODEXA AI PANEL
+            ========================================= */}
 
             <div
               className="
@@ -1082,16 +1182,20 @@ const WorkspacePreview = () => {
                 bottom-6
                 right-6
                 z-40
-                w-[390px]
+                w-[370px]
                 max-w-[calc(100%-48px)]
                 rounded-2xl
                 border
-                border-cyan-500/35
-                bg-[#191b26]/95
                 p-4
-                shadow-[0_20px_60px_rgba(0,0,0,0.65)]
+                shadow-[0_20px_60px_rgba(0,0,0,0.35)]
                 backdrop-blur-xl
               "
+              style={{
+                backgroundColor:
+                  "color-mix(in srgb, var(--color-surface) 94%, transparent)",
+
+                borderColor: "rgba(6,182,212,0.35)",
+              }}
             >
               {/* AI HEADER */}
 
@@ -1102,9 +1206,11 @@ const WorkspacePreview = () => {
                   items-center
                   justify-between
                   border-b
-                  border-[#2e334d]
                   pb-3
                 "
+                style={{
+                  borderColor: "var(--color-border)",
+                }}
               >
                 <div
                   className="
@@ -1113,8 +1219,6 @@ const WorkspacePreview = () => {
                     gap-2.5
                   "
                 >
-                  {/* ANIMATED AI STAR */}
-
                   <div
                     className="
                       nodexa-ai-star
@@ -1150,8 +1254,10 @@ const WorkspacePreview = () => {
                     className="
                       text-sm
                       font-bold
-                      text-white
                     "
+                    style={{
+                      color: "var(--color-text-primary)",
+                    }}
                   >
                     Ask Nodexa AI
                   </span>
@@ -1169,7 +1275,7 @@ const WorkspacePreview = () => {
                     font-semibold
                     uppercase
                     tracking-wider
-                    text-cyan-300
+                    text-cyan-500
                   "
                 >
                   Live
@@ -1189,16 +1295,20 @@ const WorkspacePreview = () => {
                     resize-none
                     rounded-xl
                     border
-                    border-[#2e334d]
-                    bg-[#232635]
                     p-3
                     text-xs
                     leading-5
-                    text-white
                     outline-none
                     placeholder:text-slate-500
                     focus:border-cyan-500/60
                   "
+                  style={{
+                    color: "var(--color-text-primary)",
+
+                    backgroundColor: "var(--color-surface-hover)",
+
+                    borderColor: "var(--color-border)",
+                  }}
                 />
 
                 <div
@@ -1214,7 +1324,7 @@ const WorkspacePreview = () => {
                       line-clamp-2
                       text-[11px]
                       leading-4
-                      text-cyan-300
+                      text-cyan-500
                     "
                   >
                     {aiStatus}
@@ -1257,9 +1367,9 @@ const WorkspacePreview = () => {
               </form>
             </div>
 
-            {/* =====================================
+            {/* =========================================
                 ONLINE STATUS
-            ===================================== */}
+            ========================================= */}
 
             <div
               className="
@@ -1272,13 +1382,18 @@ const WorkspacePreview = () => {
                 gap-2
                 rounded-full
                 border
-                border-[#2e334d]
-                bg-[#191b26]/90
                 px-3
                 py-1.5
                 text-[11px]
-                text-slate-300
               "
+              style={{
+                backgroundColor:
+                  "color-mix(in srgb, var(--color-surface) 92%, transparent)",
+
+                borderColor: "var(--color-border)",
+
+                color: "var(--color-text-secondary)",
+              }}
             >
               <span
                 className="
@@ -1292,9 +1407,7 @@ const WorkspacePreview = () => {
               3 collaborators online
             </div>
 
-            {/* =====================================
-                MOBILE ZOOM
-            ===================================== */}
+            {/* MOBILE ZOOM */}
 
             <div
               className="
@@ -1307,38 +1420,40 @@ const WorkspacePreview = () => {
                 gap-1
                 rounded-xl
                 border
-                border-[#2e334d]
-                bg-[#191b26]
                 p-1
                 sm:hidden
               "
+              style={{
+                backgroundColor: "var(--color-surface)",
+
+                borderColor: "var(--color-border)",
+              }}
             >
               <button
                 onClick={zoomOut}
-                className="
-                  p-2
-                  text-slate-400
-                "
+                className="p-2"
+                style={{
+                  color: "var(--color-text-secondary)",
+                }}
               >
                 <Minus size={15} />
               </button>
 
               <span
-                className="
-                  px-2
-                  text-xs
-                  text-white
-                "
+                className="px-2 text-xs"
+                style={{
+                  color: "var(--color-text-primary)",
+                }}
               >
                 {Math.round(zoom * 100)}%
               </span>
 
               <button
                 onClick={zoomIn}
-                className="
-                  p-2
-                  text-slate-400
-                "
+                className="p-2"
+                style={{
+                  color: "var(--color-text-secondary)",
+                }}
               >
                 <ZoomIn size={15} />
               </button>
@@ -1346,9 +1461,9 @@ const WorkspacePreview = () => {
           </div>
         </div>
 
-        {/* =====================================
+        {/* =========================================
             SMALL INSTRUCTIONS
-        ===================================== */}
+        ========================================= */}
 
         <div
           className="
@@ -1360,22 +1475,20 @@ const WorkspacePreview = () => {
             gap-x-4
             gap-y-3
             text-xs
-            text-slate-500
           "
+          style={{
+            color: "var(--color-text-muted)",
+          }}
         >
           <span>Drag nodes</span>
 
           <span>•</span>
 
-          <span>Select a node and add a component</span>
+          <span>Select a node before adding a component</span>
 
           <span>•</span>
 
-          <span>Switch to hand tool to pan</span>
-
-          <span>•</span>
-
-          <span>Zoom and reset</span>
+          <span>New components connect automatically</span>
 
           <span>•</span>
 
@@ -1383,18 +1496,15 @@ const WorkspacePreview = () => {
         </div>
       </div>
 
-      {/* =====================================
+      {/* =========================================
           AI STAR ANIMATION
-      ===================================== */}
+      ========================================= */}
 
       <style>
         {`
-
           @keyframes nodexaStarAnimation {
-
             0% {
               transform: rotate(0deg) scale(1);
-
               filter: drop-shadow(
                 0 0 3px
                 rgba(34, 211, 238, 0.4)
@@ -1402,10 +1512,7 @@ const WorkspacePreview = () => {
             }
 
             25% {
-              transform:
-                rotate(8deg)
-                scale(1.08);
-
+              transform: rotate(8deg) scale(1.08);
               filter: drop-shadow(
                 0 0 8px
                 rgba(34, 211, 238, 0.85)
@@ -1413,10 +1520,7 @@ const WorkspacePreview = () => {
             }
 
             50% {
-              transform:
-                rotate(0deg)
-                scale(1.15);
-
+              transform: rotate(0deg) scale(1.15);
               filter: drop-shadow(
                 0 0 12px
                 rgba(34, 211, 238, 1)
@@ -1424,10 +1528,7 @@ const WorkspacePreview = () => {
             }
 
             75% {
-              transform:
-                rotate(-8deg)
-                scale(1.08);
-
+              transform: rotate(-8deg) scale(1.08);
               filter: drop-shadow(
                 0 0 8px
                 rgba(34, 211, 238, 0.85)
@@ -1435,29 +1536,21 @@ const WorkspacePreview = () => {
             }
 
             100% {
-              transform:
-                rotate(0deg)
-                scale(1);
-
+              transform: rotate(0deg) scale(1);
               filter: drop-shadow(
                 0 0 3px
                 rgba(34, 211, 238, 0.4)
               );
             }
-
           }
 
-
           .nodexa-ai-star {
-
             animation:
               nodexaStarAnimation
               2.8s
               ease-in-out
               infinite;
-
           }
-
         `}
       </style>
     </section>
@@ -1476,7 +1569,6 @@ const ArchitectureNode = ({ node, selected, onPointerDown }) => {
         absolute
         select-none
         rounded-2xl
-        bg-[#191b26]
         p-4
         shadow-xl
         transition-shadow
@@ -1490,64 +1582,30 @@ const ArchitectureNode = ({ node, selected, onPointerDown }) => {
 
         height: nodeHeight,
 
+        backgroundColor: "var(--color-surface-elevated)",
+
         border: selected
-          ? `
-              2px solid
-              ${node.accent}
-            `
-          : `
-              1px solid
-              #2e334d
-            `,
+          ? `2px solid ${node.accent}`
+          : "1px solid var(--color-border)",
 
         boxShadow: selected
-          ? `
-              0 0 28px
-              ${node.accent}35
-            `
-          : `
-              0 14px 30px
-              rgba(0,0,0,0.25)
-            `,
+          ? `0 0 28px ${node.accent}35`
+          : "0 14px 30px rgba(0,0,0,0.18)",
 
         cursor: "grab",
       }}
     >
-      {/* RESIZE DOTS */}
+      {/* SELECTED RESIZE DOTS */}
 
       {selected && (
         <>
-          <ResizeDot
-            position="
-              -top-1.5
-              -left-1.5
-            "
-            color={node.accent}
-          />
+          <ResizeDot position="-top-1.5 -left-1.5" color={node.accent} />
 
-          <ResizeDot
-            position="
-              -top-1.5
-              -right-1.5
-            "
-            color={node.accent}
-          />
+          <ResizeDot position="-top-1.5 -right-1.5" color={node.accent} />
 
-          <ResizeDot
-            position="
-              -bottom-1.5
-              -left-1.5
-            "
-            color={node.accent}
-          />
+          <ResizeDot position="-bottom-1.5 -left-1.5" color={node.accent} />
 
-          <ResizeDot
-            position="
-              -bottom-1.5
-              -right-1.5
-            "
-            color={node.accent}
-          />
+          <ResizeDot position="-bottom-1.5 -right-1.5" color={node.accent} />
         </>
       )}
 
@@ -1596,8 +1654,10 @@ const ArchitectureNode = ({ node, selected, onPointerDown }) => {
           gap-2
           text-sm
           font-bold
-          text-white
         "
+        style={{
+          color: "var(--color-text-primary)",
+        }}
       >
         <Layers3
           size={16}
@@ -1616,8 +1676,10 @@ const ArchitectureNode = ({ node, selected, onPointerDown }) => {
           mt-2
           text-[11px]
           leading-4
-          text-slate-400
         "
+        style={{
+          color: "var(--color-text-secondary)",
+        }}
       >
         {node.description}
       </p>
@@ -1639,10 +1701,11 @@ const ResizeDot = ({ position, color }) => {
         w-3
         rounded-sm
         border-2
-        border-[#0b0e18]
       `}
       style={{
         backgroundColor: color,
+
+        borderColor: "var(--color-background-secondary)",
       }}
     />
   );
@@ -1663,11 +1726,13 @@ const Avatar = ({ letter, className }) => {
         justify-center
         rounded-full
         border-2
-        border-[#0b0e18]
         text-[10px]
         font-bold
         ${className}
       `}
+      style={{
+        borderColor: "var(--color-surface)",
+      }}
     >
       {letter}
     </div>

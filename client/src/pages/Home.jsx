@@ -1,6 +1,6 @@
 import Navbar from "../components/layout/Navbar";
 import LandingPage from "./LandingPage";
-import WorkspacePreview from "../components/common/WorkspacePreview";
+// import WorkspacePreview from "../components/common/WorkspacePreview";
 
 const HomePage = () => {
   return (
@@ -9,7 +9,7 @@ const HomePage = () => {
 
       <LandingPage />
 
-      <WorkspacePreview />
+      {/* <WorkspacePreview /> */}
     </>
   );
 };
