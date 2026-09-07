@@ -14,6 +14,10 @@ import WorkspacePreview from "../components/common/WorkspacePreview";
 import FeatureSection from "../components/common/FeatureSection";
 import InfiniteCanvas from "../components/common/InfiniteCanvas";
 import TemplatesSection from "../components/common/TemplatesSection";
+import DeveloperSection from "../components/common/DeveloperSection";
+import AboutSection from "../components/common/AboutSection";
+import CTASection from "../components/common/CTASection";
+import FooterSection from "../components/common/FooterSection";
 
 const LandingPage = () => {
   const heroRef = useRef(null);
@@ -592,6 +596,14 @@ const LandingPage = () => {
       <InfiniteCanvas />
 
       <TemplatesSection />
+
+      <DeveloperSection />
+
+      <AboutSection />
+
+      <CTASection />
+
+      <FooterSection />
     </>
   );
 };
